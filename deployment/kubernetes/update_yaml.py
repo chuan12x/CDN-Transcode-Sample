@@ -45,7 +45,7 @@ def update_yaml(nfs_server, volume_directory, dir_path, pods, pods_dict, node_di
             data = yaml_utils.add_volumes(
                 data, nfs_server, True, volume_directory)
 
-            node_port = 443
+            node_port = 38080 
             service_file = dir_path + "/cdn-service-service.yaml"
             service_data = yaml_utils.load_yaml_file(service_file)
             service_data = yaml_utils.set_nodePort(service_data, node_port)
