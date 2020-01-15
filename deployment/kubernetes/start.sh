@@ -1,6 +1,8 @@
 #!/bin/bash -e
 
 DIR=$(dirname $(readlink -f "$0"))
+export NGINX_LOG_VOLUME=$(readlink -f "/var/log/nginx")
+
 EXT=*.yaml
 
 # Set Bash color
@@ -58,6 +60,8 @@ done
 
 rm -rf $DIR/$EXT
 
+sudo mkdir -p "${NGINX_LOG_VOLUME}"
+
 yml="$DIR/docker-compose-template.yml"
 test -f "$yml"
 
@@ -75,35 +79,10 @@ kompose convert -f "$yml" -o "$DIR"
 
 "$DIR/run_with_command.py" "$DIR"
 
-kubectl create secret generic ovc-ssl-certificates --from-file=self.key="$DIR/../../self-certificates/self.key" --from-file=self.crt="$DIR/../../self-certificates/self.crt" --from-file=dhparam.pem="$DIR/../../self-certificates/dhparam.pem" --dry-run -o yaml > "$DIR/ovc-ssl-certificates.yaml"
+kubectl create secret generic ovc-ssl-certificates --from-file=self.key="$DIR/../../self-certificates/self.key" --from-file=self.crt="$DIR/../../self-certificates/self.crt" --dry-run -o yaml > "$DIR/ovc-ssl-certificates.yaml"
 
 kubectl apply -f "$DIR/ovc-ssl-certificates.yaml"
 
-for i in $(find "$DIR" -maxdepth 1 -name "*service.yaml"); do
-    kubectl apply -f "$i"
-done
-
-for i in $(find "$DIR" -maxdepth 1 -name "*deployment.yaml" | grep -v 'live-transcode*'); do
-    kubectl apply -f "$i"
-done
-
-sleep 2s
-
-for i in $(find "$DIR" -maxdepth 1 -name "*deployment.yaml" | grep -v 'live-transcode*'); do
-    len=$(echo $DIR | wc -m)
-    i1=$(echo ${i:${len}} | sed 's/-deployment.yaml//')
-
-    while true; do
-        if (kubectl get pod | awk '{print $1,$3}' | grep -q "${i1}.*Running"); then
-            break
-        else
-            sleep 2s
-        fi
-    done
-done
-
-sleep 2s
-
-for i in $(find "$DIR" -maxdepth 1 -name "live-transcode*.yaml"); do
+for i in $(find "$DIR" -maxdepth 1 -name "*.yaml"); do
     kubectl apply -f "$i"
 done

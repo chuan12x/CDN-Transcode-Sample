@@ -27,12 +27,12 @@ spec:
           requests:
             cpu: 100m
         env:
-          - name: ELASTICSEARCH_HOSTS
-            value: http://elasticsearch-logging:9200
-          - name: SERVER_NAME
-            value: kibana-logging
-          - name: SERVER_REWRITEBASEPATH
-            value: "false"
+        - name: ELASTICSEARCH_HOSTS
+          value: http://elasticsearch-logging:9200
+        - name: SERVER_NAME
+          value: kibana-logging
+        - name: SERVER_REWRITEBASEPATH
+          value: "false"
         ports:
         - containerPort: 5601
           name: ui
@@ -42,14 +42,18 @@ spec:
           mountPath: /var/run/secrets
           readOnly: true
         - name: config
-          mountPath: /usr/share/kibana/config
+          mountPath: /usr/share/kibana/config/kibana.yml
           readOnly: true
+          subPath: kibana.yml
       nodeSelector:
-        kubernetes.io/hostname: master.machine
+        node-role.kubernetes.io/master: ""
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        effect: "NoSchedule"
       volumes:
       - name: secrets
         secret:
           secretName: kibana-ssl-certificates
       - name: config
-        hostPath:
-          path:
+        configMap:
+          name: kibana-config

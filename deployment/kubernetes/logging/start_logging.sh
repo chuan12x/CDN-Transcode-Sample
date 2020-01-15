@@ -17,16 +17,16 @@ function try_command {
     return $status
 }
 
-"$DIR/stop_alerting.sh"
+"$DIR/stop_logging.sh"
 
 set +e
 try_command hash kubectl > /dev/null
 set -e
 
-kubectl create -f "$DIR/namespace/namespace.yaml"
+kubectl create secret generic kibana-ssl-certificates --namespace=kube-system --from-file=self.key="$DIR/../../../self-certificates/self.key" --from-file=self.crt="$DIR/../../../self-certificates/self.crt" --dry-run -o yaml > "$DIR/kibana-ssl-certificates.yaml"
 
-for i in $(find "$DIR" -path "$DIR/namespace" -a -prune -o -name "*.yaml" -print); do
+for i in $(find "$DIR" -name "*.yaml"); do
     kubectl create -f "$i"
 done
 
-echo "Prometheus are running..."
+echo "Logging are running..."

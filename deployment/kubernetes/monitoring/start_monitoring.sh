@@ -17,18 +17,18 @@ function try_command {
     return $status
 }
 
-"$DIR/stop_EFK.sh"
+"$DIR/stop_monitoring.sh"
 
 set +e
 try_command hash kubectl > /dev/null
 set -e
 
-kubectl create secret generic kibana-ssl-certificates --namespace=kube-system --from-file=self.key="$DIR/../../../self-certificates/self.key" --from-file=self.crt="$DIR/../../../self-certificates/self.crt" --from-file=dhparam.pem="$DIR/../../../self-certificates/dhparam.pem" --dry-run -o yaml > "$DIR/kibana-ssl-certificates.yaml"
+kubectl create -f "$DIR/namespace/namespace.yaml"
 
-"$DIR/update_EFK.py" "$DIR/"
+kubectl create secret generic grafana-ssl-certificates --namespace=pgmon --from-file=self.key="$DIR/../../../self-certificates/self.key" --from-file=self.crt="$DIR/../../../self-certificates/self.crt" --dry-run -o yaml > "$DIR/grafana-ssl-certificates.yaml"
 
-for i in $(ls $DIR/*.yaml); do
+for i in $(find "$DIR" -path "$DIR/namespace" -a -prune -o -name "*.yaml" -print); do
     kubectl create -f "$i"
 done
 
-echo "EFK are running..."
+echo "Monitoring are running..."
